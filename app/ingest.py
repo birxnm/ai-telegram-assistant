@@ -45,6 +45,16 @@ def embed_with_retry(texts: list[str], attempts: int = 3) -> list[list[float]]:
 def main() -> None:
     init_db()
 
+    # На перезапусках (особенно в облаке) не переиндексируем зря: это экономит квоту
+    # эмбеддингов и не сбрасывает кэш FAQ. Принудительно: REINGEST=1.
+    force = os.getenv("REINGEST", "").lower() in ("1", "true", "yes")
+    with SessionLocal() as session:
+        existing = session.query(DocumentChunk).count()
+    if existing and not force:
+        print(f"База уже содержит {existing} чанков — пропускаю индексацию "
+              f"(REINGEST=1 чтобы переиндексировать).")
+        return
+
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
         chunk_overlap=120,

@@ -7,5 +7,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+RUN chmod +x start.sh
 
-CMD ["python", "-m", "app.bot"]
+# По умолчанию (облако): индексация + бот. docker-compose переопределяет команды по сервисам.
+CMD ["sh", "start.sh"]

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, DateTime, Integer, String, Text, create_engine
+from sqlalchemy import BigInteger, Column, DateTime, Integer, String, Text, create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 from pgvector.sqlalchemy import Vector
 
@@ -63,5 +63,11 @@ class Feedback(Base):
 
 
 def init_db() -> None:
-    """Создаёт таблицы. Расширение pgvector включается через db/init.sql при старте Postgres."""
+    """Включает расширение pgvector и создаёт таблицы.
+
+    Локально расширение уже ставит db/init.sql, но в облаке (Railway и т.п.) его нет —
+    поэтому включаем здесь, чтобы код был переносимым.
+    """
+    with engine.begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     Base.metadata.create_all(engine)

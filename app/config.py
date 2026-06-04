@@ -1,5 +1,6 @@
 """Конфигурация приложения. Все значения читаются из переменных окружения / .env."""
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -34,6 +35,15 @@ class Settings(BaseSettings):
     worker_threads: int = 16
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @field_validator("database_url")
+    @classmethod
+    def _normalize_db_url(cls, value: str) -> str:
+        """Приводит URL к драйверу psycopg2 (хостинги отдают postgres:// или postgresql://)."""
+        for prefix in ("postgresql+psycopg2://", "postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                return "postgresql+psycopg2://" + value[len(prefix):]
+        return value
 
 
 settings = Settings()

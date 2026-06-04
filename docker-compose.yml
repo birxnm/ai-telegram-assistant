@@ -1,0 +1,45 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: krasok
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d krasok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Разовая индексация базы знаний в pgvector. Отрабатывает и завершается.
+  ingest:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/krasok
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python -m app.ingest
+
+  # Сам Telegram-бот (polling). Стартует только после успешной индексации.
+  bot:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/krasok
+    depends_on:
+      db:
+        condition: service_healthy
+      ingest:
+        condition: service_completed_successfully
+    command: python -m app.bot
+    restart: unless-stopped
+
+volumes:
+  pgdata:

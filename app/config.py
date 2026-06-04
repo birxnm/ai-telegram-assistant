@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     )
 
     # Модели Gemini
-    chat_model: str = "gemini-2.5-flash"
+    chat_model: str = "gemini-2.5-flash-lite"
     embedding_model: str = "models/gemini-embedding-001"
     embedding_dim: int = 3072  # размерность gemini-embedding-001 по умолчанию (нормализованы)
 
